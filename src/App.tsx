@@ -224,7 +224,7 @@ export default function App() {
           </div>
         </section>
 
-        <section id="blog" className="min-h-screen py-24 border-t border-slate/10">
+        {/* <section id="blog" className="min-h-screen py-24 border-t border-slate/10">
           <div className="py-4 mb-12 border-b border-slate/20">
             <h2 className="text-2xl sm:text-3xl md:text-8xl lg:text-9xl leading-tight md:leading-none uppercase">Блог</h2>
           </div>
@@ -274,7 +274,7 @@ export default function App() {
               </motion.article>
             ))}
           </div>
-        </section>
+        </section> */}
 
         <footer className="mt-24 pt-12 border-t border-slate/20 flex flex-col md:flex-row justify-between gap-6 text-[10px] uppercase tracking-[0.3em] text-slate font-medium">
           <div>© 2026 ELITE ATHLETE PROFILE</div>
