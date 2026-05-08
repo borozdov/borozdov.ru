@@ -11,6 +11,11 @@
 }
 
 @layer base {
+  html,
+  #root {
+    @apply overflow-x-hidden;
+  }
+
   body {
     @apply bg-obsidian text-titanium font-sans selection:bg-titanium selection:text-obsidian overflow-x-hidden;
     background-image: 
@@ -33,4 +38,30 @@
 
 ::-webkit-scrollbar-thumb {
   @apply bg-slate hover:bg-titanium transition-colors;
+}
+
+.calendar-clip,
+#my-cal-inline-meet,
+#my-cal-inline-meet iframe {
+  background-color: transparent !important;
+}
+
+.calendar-clip {
+  max-width: calc(100vw - 3rem);
+}
+
+#my-cal-inline-meet {
+  overscroll-behavior-x: none;
+  scrollbar-width: none;
+}
+
+#my-cal-inline-meet::-webkit-scrollbar {
+  display: none;
+}
+
+#my-cal-inline-meet iframe {
+  height: 100% !important;
+  max-width: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
 }

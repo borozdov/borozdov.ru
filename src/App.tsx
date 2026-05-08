@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { ExternalLink, ArrowUp } from "lucide-react";
 
@@ -9,9 +9,108 @@ const NAV_ITEMS = [
   { id: 4, title: "Обучение", anchor: "education" },
 ];
 
+function CalInlineEmbed() {
+  useEffect(() => {
+    (function (C: Window & { Cal?: any }, A: string, L: string) {
+      const push = function (api: any, args: IArguments | unknown[]) {
+        api.q.push(args);
+      };
+      const d = C.document;
+
+      C.Cal =
+        C.Cal ||
+        function () {
+          const cal = C.Cal;
+          const args = arguments;
+
+          if (!cal.loaded) {
+            cal.ns = {};
+            cal.q = cal.q || [];
+            d.head.appendChild(d.createElement("script")).src = A;
+            cal.loaded = true;
+          }
+
+          if (args[0] === L) {
+            const api = function () {
+              push(api, arguments);
+            };
+            const namespace = args[1];
+
+            api.q = api.q || [];
+            if (typeof namespace === "string") {
+              cal.ns[namespace] = cal.ns[namespace] || api;
+              push(cal.ns[namespace], args);
+              push(cal, ["initNamespace", namespace]);
+            } else {
+              push(cal, args);
+            }
+            return;
+          }
+
+          push(cal, args);
+        };
+    })(window, "https://app.cal.com/embed/embed.js", "init");
+
+    const Cal = (window as unknown as Window & { Cal: any }).Cal;
+
+    Cal("init", "meet", { origin: "https://app.cal.com" });
+    Cal.ns.meet("inline", {
+      elementOrSelector: "#my-cal-inline-meet",
+      config: {
+        disableMobileScroll: true,
+        hideBranding: true,
+        layout: "month_view",
+        useSlotsViewOnSmallScreen: "true",
+        theme: "dark",
+      },
+      calLink: "borozdov/meet",
+    });
+
+    Cal.ns.meet("ui", {
+      theme: "dark",
+      styles: {
+        body: {
+          background: "transparent",
+        },
+        eventTypeListItem: {
+          background: "transparent",
+        },
+      },
+      cssVarsPerTheme: {
+        light: { "cal-brand": "#292929" },
+        dark: {
+          "cal-bg": "transparent",
+          "cal-bg-emphasis": "#171717",
+          "cal-bg-muted": "#111111",
+          "cal-bg-subtle": "#0b0b0b",
+          "cal-border": "rgba(255, 255, 255, 0.12)",
+          "cal-brand": "#fafafa",
+          "cal-text": "#ffffff",
+          "cal-text-emphasis": "#ffffff",
+          "cal-text-muted": "#a3a3a3",
+          "cal-text-subtle": "#737373",
+        },
+      },
+      hideEventTypeDetails: false,
+      hideBranding: true,
+      layout: "month_view",
+    });
+  }, []);
+
+  return (
+    <div className="calendar-clip mx-auto h-[820px] w-full max-w-[1494px] overflow-hidden bg-transparent md:h-[660px] lg:h-[430px] xl:h-[620px]">
+      <div id="my-cal-inline-meet" className="h-[calc(100%+120px)] w-full bg-transparent" />
+    </div>
+  );
+}
+
 export default function App() {
   const { scrollY } = useScroll();
   const subtitleOpacity = useTransform(scrollY, [0, 100], [1, 0]);
+  const backToTopOpacity = useTransform(scrollY, [0, 160], [0, 1]);
+  const backToTopPointerEvents = useTransform(scrollY, (value) =>
+    value > 80 ? "auto" : "none"
+  );
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -26,15 +125,17 @@ export default function App() {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/brushed-alum.png')]"></div>
       </div>
 
-      <button
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
+      <motion.button
+        style={{
+          opacity: backToTopOpacity,
+          pointerEvents: backToTopPointerEvents,
+        }}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Наверх"
         className="fixed bottom-8 right-8 z-50 p-4 border border-slate/20 bg-obsidian/50 backdrop-blur-md hover:bg-titanium hover:text-obsidian transition-all duration-300 group"
       >
         <ArrowUp className="w-6 h-6" />
-      </button>
+      </motion.button>
 
       <header 
         className="fixed top-0 left-0 w-full p-6 md:p-12 z-50 flex justify-between items-center mix-blend-difference pointer-events-none"
@@ -42,12 +143,12 @@ export default function App() {
         <div className="text-2xl md:text-4xl font-display tracking-tighter uppercase">
           Borozdov Nikita
         </div>
-        <div 
+        <motion.div
           style={{ opacity: subtitleOpacity }}
           className="hidden md:block text-[10px] uppercase tracking-[0.5em] text-slate font-medium"
         >
           Elite Athlete Profile
-        </div>
+        </motion.div>
       </header>
 
       <main className="relative z-10 p-6 md:p-12">
@@ -94,8 +195,8 @@ export default function App() {
               <div className="space-y-8">
                 <div>
                   <span className="block text-[10px] uppercase text-slate">Результат</span>
-                  <div className="text-5xl md:text-8xl font-display leading-none">3:53.15</div>
-                  <span className="text-lg md:text-xl font-display uppercase text-titanium">754 ОЧКА</span>
+                  <div className="text-5xl md:text-8xl font-display leading-none">4:00.79</div>
+                  <span className="text-lg md:text-xl font-display uppercase text-titanium">762 ОЧКА</span>
                 </div>
                 <div className="grid grid-cols-2 gap-6 pt-12 border-t border-slate/10">
                   <div>
@@ -104,13 +205,13 @@ export default function App() {
                   </div>
                   <div>
                     <span className="block text-[10px] uppercase text-slate">Дата</span>
-                    <span className="text-xs md:text-sm font-bold uppercase">21.11.2024</span>
+                    <span className="text-xs md:text-sm font-bold uppercase">19.04.2026</span>
                   </div>
                 </div>
                 <div>
                   <span className="block text-[10px] uppercase text-slate">Соревнование</span>
                   <p className="text-xs md:text-sm font-bold uppercase leading-relaxed">
-                    Чемпионат России по плаванию (г. Санкт-Петербург, бассейн 25 м)
+                    Кубок России по плаванию. Финал, Санкт-Петербург
                   </p>
                 </div>
               </div>
@@ -145,9 +246,9 @@ export default function App() {
               <h3 className="text-slate text-xs tracking-[0.4em] mb-8 uppercase">Лучшие результаты (бассейн 50 м)</h3>
               <div className="space-y-6">
                 {[
-                  { event: "400 м, в/ст", time: "4:02.30", points: "749 очков" },
+                  { event: "400 м, в/ст", time: "4:00.79", points: "762 очка" },
                   { event: "800 м, в/ст", time: "8:19.10", points: "743 очка" },
-                  { event: "1500 м, в/ст", time: "16:02.64", points: "739 очков" },
+                  { event: "1500 м, в/ст", time: "16:00.16", points: "745 очков" },
                 ].map((item) => (
                   <div key={item.event} className="flex justify-between items-baseline border-b border-slate/10 pb-4">
                     <span className="text-xs md:text-lg font-bold uppercase">{item.event}</span>
@@ -222,6 +323,16 @@ export default function App() {
               </div>
             </div>
           </div>
+        </section>
+
+        <section id="calendar" className="overflow-x-hidden pt-24 pb-8">
+          <div className="py-4 mb-12 border-b border-slate/20">
+            <h2 className="text-2xl sm:text-3xl md:text-8xl lg:text-9xl leading-tight md:leading-none uppercase">Календарь</h2>
+          </div>
+          <p className="mb-10 max-w-4xl text-xl md:text-4xl font-sans font-black uppercase leading-tight">
+            Запишись на встречу / знакомство со мной
+          </p>
+          <CalInlineEmbed />
         </section>
 
         {/* <section id="blog" className="min-h-screen py-24 border-t border-slate/10">
