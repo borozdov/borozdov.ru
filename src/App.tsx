@@ -248,7 +248,7 @@ export default function App() {
                 {[
                   { event: "400 м, в/ст", time: "4:00.79", points: "762 очка" },
                   { event: "800 м, в/ст", time: "8:19.10", points: "743 очка" },
-                  { event: "1500 м, в/ст", time: "16:00.16", points: "745 очков" },
+                  { event: "1500 м, в/ст", time: "15:58.02", points: "750 очков" },
                 ].map((item) => (
                   <div key={item.event} className="flex justify-between items-baseline border-b border-slate/10 pb-4">
                     <span className="text-xs md:text-lg font-bold uppercase">{item.event}</span>
