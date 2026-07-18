@@ -110,16 +110,6 @@
   background: var(--ink);
 }
 
-/* Прокрутка без видимого скроллбара (мобильная навигация в шапке) */
-.no-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
 .calendar-clip,
 #my-cal-inline-meet,
 #my-cal-inline-meet iframe {

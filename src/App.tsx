@@ -337,13 +337,13 @@ export default function App() {
           </button>
         </div>
 
-        <nav className="md:hidden border-t border-hairline overflow-x-auto no-scrollbar" aria-label="Разделы">
-          <div className="flex gap-6 px-5 h-11 items-center w-max">
+        <nav className="md:hidden border-t border-hairline" aria-label="Разделы">
+          <div className="flex items-center justify-between h-11 px-4">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.anchor}
                 onClick={() => scrollToSection(item.anchor)}
-                className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate hover:text-ink transition-colors duration-150 whitespace-nowrap"
+                className="text-[10px] font-medium uppercase tracking-[0.04em] text-slate hover:text-ink transition-colors duration-150 whitespace-nowrap"
               >
                 {item.title}
               </button>
