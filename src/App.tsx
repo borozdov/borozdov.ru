@@ -337,7 +337,7 @@ export default function App() {
           </button>
         </div>
 
-        <nav className="md:hidden border-t border-hairline overflow-x-auto" aria-label="Разделы">
+        <nav className="md:hidden border-t border-hairline overflow-x-auto no-scrollbar" aria-label="Разделы">
           <div className="flex gap-6 px-5 h-11 items-center w-max">
             {NAV_ITEMS.map((item) => (
               <button
