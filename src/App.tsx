@@ -143,20 +143,20 @@ function ResultsTable({ caption, rows }: { caption: string; rows: typeof RESULTS
         <Label>{caption}</Label>
       </div>
 
-      {/* Шапка таблицы — только на широких экранах */}
+      {/* Шапка таблицы — только на широких экранах; сетка идентична строкам, чтобы колонки совпадали */}
       <div
-        className="hidden md:grid grid-cols-[1fr_150px_120px] bg-inset text-slate text-[11px] font-medium uppercase tracking-[0.12em]"
+        className="hidden md:grid grid-cols-[1fr_170px_120px] bg-inset text-slate text-[11px] font-medium uppercase tracking-[0.12em]"
         aria-hidden="true"
       >
         <div className="px-5 py-3">Дистанция</div>
-        <div className="px-5 py-3 text-right">Время</div>
-        <div className="px-5 py-3 text-right">Очки FINA</div>
+        <div className="py-3 text-center">Время</div>
+        <div className="py-3 text-center">Очки FINA</div>
       </div>
 
       {rows.map((row) => (
         <div
           key={row.event}
-          className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_150px_120px] items-center gap-x-4 border-t border-hairline hover:bg-hoverbg transition-colors duration-150 px-4 py-4 md:p-0"
+          className="grid grid-cols-[1fr_auto] gap-x-4 md:grid-cols-[1fr_170px_120px] md:gap-x-0 items-center border-t border-hairline hover:bg-hoverbg transition-colors duration-150 px-4 py-4 md:p-0"
         >
           <div className="md:px-5 md:py-4 text-sm md:text-base font-medium">
             <span className="inline-flex items-center gap-2.5 flex-wrap">
@@ -168,10 +168,10 @@ function ResultsTable({ caption, rows }: { caption: string; rows: typeof RESULTS
               {row.points} {pointsWord(row.points)} FINA
             </span>
           </div>
-          <div className="md:px-5 md:py-4 text-right font-mono tabular-nums text-xl md:text-2xl font-semibold whitespace-nowrap">
+          <div className="md:py-4 text-right md:text-center font-mono tabular-nums text-xl md:text-2xl font-semibold whitespace-nowrap">
             {row.time}
           </div>
-          <div className="hidden md:block px-5 py-4 text-right font-mono tabular-nums text-base text-slate">
+          <div className="hidden md:block py-4 text-center font-mono tabular-nums text-base text-slate">
             {row.points}
           </div>
         </div>
