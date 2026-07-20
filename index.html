@@ -4,11 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      // Лик следует за средой: только системная тема (брендбук §1.5)
+      // Лик (брендбук §1.5): по умолчанию — среда, поверх — ручной выбор с памятью
       (function () {
         try {
+          var stored = localStorage.getItem('lik');
           document.documentElement.dataset.theme =
-            window.matchMedia('(prefers-color-scheme: light)').matches ? 'titan' : 'obsidian';
+            stored === 'titan' || stored === 'obsidian'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: light)').matches ? 'titan' : 'obsidian';
         } catch (e) {}
       })();
     </script>

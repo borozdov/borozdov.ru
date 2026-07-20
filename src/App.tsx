@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { ArrowUp, ArrowUpRight } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Moon, Send, Sun } from "lucide-react";
 
 type Lik = "obsidian" | "titan";
 
 const NAV_ITEMS = [
   { title: "Спорт", anchor: "sport" },
-  { title: "Рекорды", anchor: "records" },
   { title: "Результаты", anchor: "results" },
+  { title: "Проекты", anchor: "projects" },
   { title: "Обучение", anchor: "education" },
   { title: "Встреча", anchor: "meet" },
 ];
@@ -25,8 +25,25 @@ const RESULTS_LCM = [
 ];
 
 const PROFILES = [
-  { name: "SPORTCUBES", note: "База результатов российских стартов", url: "https://sportcubes.ru/idswim51548" },
-  { name: "SWIMCLOUD", note: "Международная база пловцов", url: "https://www.swimcloud.com/swimmer/3440515/" },
+  { name: "Sportcubes", note: "База результатов российских стартов", url: "https://sportcubes.ru/idswim51548" },
+  { name: "Swimcloud", note: "Международная база пловцов", url: "https://www.swimcloud.com/swimmer/3440515/" },
+];
+
+const PROJECTS = [
+  {
+    name: "Калькулятор очков FINA",
+    host: "fina.borozdov.ru",
+    url: "https://fina.borozdov.ru/",
+    note: "Расчёт очков World Aquatics по времени, дистанции и бассейну. Работает офлайн, есть Android-приложение.",
+    meta: "Веб · PWA · Android",
+  },
+  {
+    name: "Юниорские рекорды России",
+    host: "russwimming-records-junior.borozdov.ru",
+    url: "https://russwimming-records-junior.borozdov.ru/",
+    note: "Автообновляемое зеркало юниорских рекордов России по плаванию. Данные обновляются ежедневно и открыты для скачивания: JSON, CSV, Excel.",
+    meta: "Открытые данные · Автообновление",
+  },
 ];
 
 const EDUCATION = [
@@ -50,6 +67,19 @@ const EDUCATION = [
   },
 ];
 
+const TELEGRAM_URL = "https://t.me/BorozdovNikita";
+
+/* ---------- Лик (§1.5): по умолчанию — среда, поверх — ручной выбор с памятью ---------- */
+
+function getStoredLik(): Lik | null {
+  try {
+    const value = localStorage.getItem("lik");
+    return value === "titan" || value === "obsidian" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function getInitialLik(): Lik {
   if (typeof document !== "undefined") {
     const current = document.documentElement.dataset.theme;
@@ -58,26 +88,64 @@ function getInitialLik(): Lik {
   return "obsidian";
 }
 
-/* Лик следует за средой (§1.5): только системная тема, без ручного выбора */
-function useAutoLik(): Lik {
+function useLik(): [Lik, () => void] {
   const [lik, setLik] = useState<Lik>(getInitialLik);
+
+  const apply = useCallback((next: Lik) => {
+    document.documentElement.dataset.theme = next;
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => meta.setAttribute("content", next === "obsidian" ? "#0d0d0d" : "#fafafa"));
+    setLik(next);
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: light)");
-    const apply = () => {
-      const next: Lik = media.matches ? "titan" : "obsidian";
-      document.documentElement.dataset.theme = next;
-      setLik(next);
+    const onChange = () => {
+      if (getStoredLik()) return; // ручной выбор сильнее среды
+      apply(media.matches ? "titan" : "obsidian");
     };
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, []);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [apply]);
 
-  return lik;
+  const toggle = useCallback(() => {
+    const next: Lik = document.documentElement.dataset.theme === "obsidian" ? "titan" : "obsidian";
+    try {
+      localStorage.setItem("lik", next);
+    } catch {}
+    apply(next);
+  }, [apply]);
+
+  return [lik, toggle];
 }
 
-/* Появление секции: fade + подъём, 0.3s ease (§8) */
+/* ---------- Скроллспай для навигации ---------- */
+
+function useActiveSection(ids: string[]): string | null {
+  const [active, setActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        }
+      },
+      { rootMargin: "-25% 0px -65% 0px" }
+    );
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [ids]);
+
+  return active;
+}
+
+/* ---------- Появление: fade + подъём, 0.3s ease (§8) ---------- */
+
 function Rise({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
   const reduced = useReducedMotion();
   if (reduced) return <div className={className}>{children}</div>;
@@ -94,18 +162,7 @@ function Rise({ children, delay = 0, className }: { children: React.ReactNode; d
   );
 }
 
-function SectionHeader({ index, title, id }: { index: string; title: string; id?: string }) {
-  return (
-    <div className="border-t border-hairline pt-5 mb-10 md:mb-14 flex items-baseline justify-between gap-6">
-      <h2 className="text-3xl sm:text-5xl md:text-7xl font-semibold uppercase tracking-[-0.02em] leading-none">
-        {title}
-      </h2>
-      <span className="font-mono tabular-nums text-slate text-sm md:text-base" aria-hidden="true">
-        {index}
-      </span>
-    </div>
-  );
-}
+/* ---------- Атомы ---------- */
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -118,6 +175,35 @@ function RecordBadge({ children }: { children: React.ReactNode }) {
     <span className="inline-block bg-ink text-canvas rounded-[2px] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]">
       {children}
     </span>
+  );
+}
+
+/* Секция: hairline во всю ширину (§6), контент — в контейнере */
+function Section({
+  id,
+  index,
+  title,
+  children,
+}: {
+  id: string;
+  index: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-32 border-t border-hairline">
+      <div className="mx-auto max-w-[1400px] px-5 md:px-10 pt-6 md:pt-8 pb-16 md:pb-28">
+        <div className="mb-10 md:mb-16 flex items-baseline justify-between gap-6">
+          <h2 className="text-3xl sm:text-5xl md:text-7xl font-semibold uppercase tracking-[-0.02em] leading-none">
+            {title}
+          </h2>
+          <span className="font-mono tabular-nums text-slate text-sm md:text-base" aria-hidden="true">
+            {index}
+          </span>
+        </div>
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -179,6 +265,56 @@ function ResultsTable({ caption, rows }: { caption: string; rows: typeof RESULTS
     </div>
   );
 }
+
+/* Карточка-ссылка с фирменным hover-жестом — инверсией (§8) */
+function InvertCard({
+  href,
+  title,
+  note,
+  meta,
+  big = false,
+}: {
+  href: string;
+  title: string;
+  note: string;
+  meta?: string;
+  big?: boolean;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex h-full flex-col justify-between gap-8 rounded-[8px] border border-hairline p-6 md:p-8 hover:bg-ink hover:text-canvas hover:border-strong transition-colors duration-150"
+    >
+      <div className="flex items-start justify-between gap-6">
+        <span
+          className={`font-semibold uppercase tracking-[-0.02em] leading-[1.05] ${
+            big ? "text-2xl md:text-4xl" : "text-2xl md:text-3xl"
+          }`}
+        >
+          {title}
+        </span>
+        <ArrowUpRight
+          className="w-6 h-6 md:w-7 md:h-7 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
+          strokeWidth={2}
+        />
+      </div>
+      <div>
+        <p className="text-sm md:text-base text-slate group-hover:text-canvas/70 transition-colors duration-150 leading-snug">
+          {note}
+        </p>
+        {meta && (
+          <p className="mt-4 pt-4 border-t border-hairline group-hover:border-canvas/20 text-[11px] font-medium uppercase tracking-[0.12em] text-slate group-hover:text-canvas/70 transition-colors duration-150 break-words">
+            {meta}
+          </p>
+        )}
+      </div>
+    </a>
+  );
+}
+
+/* ---------- Cal.com ---------- */
 
 function CalInlineEmbed({ lik }: { lik: Lik }) {
   useEffect(() => {
@@ -283,18 +419,24 @@ function CalInlineEmbed({ lik }: { lik: Lik }) {
   );
 }
 
+/* ---------- Страница ---------- */
+
 export default function App() {
-  const lik = useAutoLik();
+  const [lik, toggleLik] = useLik();
+  const active = useActiveSection(NAV_ITEMS.map((item) => item.anchor));
   const { scrollY } = useScroll();
   const backToTopOpacity = useTransform(scrollY, [0, 160], [0, 1]);
   const backToTopPointerEvents = useTransform(scrollY, (value) => (value > 80 ? "auto" : "none"));
 
-  const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <div className="min-h-screen bg-canvas text-ink">
+      <a
+        href="#sport"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] bg-ink text-canvas rounded-[4px] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em]"
+      >
+        К содержанию
+      </a>
+
       <motion.button
         style={{ opacity: backToTopOpacity, pointerEvents: backToTopPointerEvents }}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -305,7 +447,7 @@ export default function App() {
       </motion.button>
 
       <header className="sticky top-0 z-40 bg-canvas border-b border-hairline">
-        <div className="mx-auto max-w-[1400px] px-5 md:px-10 h-16 flex items-center justify-between gap-6">
+        <div className="mx-auto max-w-[1400px] px-5 md:px-10 h-16 flex items-center justify-between gap-4 md:gap-6">
           <a
             href="#top"
             onClick={(e) => {
@@ -319,45 +461,71 @@ export default function App() {
 
           <nav className="hidden md:flex items-center gap-7" aria-label="Разделы">
             {NAV_ITEMS.map((item) => (
-              <button
+              <a
                 key={item.anchor}
-                onClick={() => scrollToSection(item.anchor)}
-                className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate hover:text-ink transition-colors duration-150"
+                href={`#${item.anchor}`}
+                aria-current={active === item.anchor ? "true" : undefined}
+                className={`text-[11px] font-medium uppercase tracking-[0.12em] transition-colors duration-150 ${
+                  active === item.anchor ? "text-ink" : "text-slate hover:text-ink"
+                }`}
               >
                 {item.title}
-              </button>
+              </a>
             ))}
           </nav>
 
-          <button
-            onClick={() => scrollToSection("meet")}
-            className="bg-ink text-canvas rounded-[4px] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] hover:brightness-85 transition duration-150 whitespace-nowrap"
-          >
-            Записаться
-          </button>
+          <div className="flex items-center gap-2.5">
+            {/* Переключатель лика (§7): иконка показывает, куда переключит клик */}
+            <button
+              onClick={toggleLik}
+              aria-label={lik === "obsidian" ? "Включить светлый лик — Титан" : "Включить тёмный лик — Обсидиан"}
+              className="p-2.5 rounded-[4px] border border-hairline text-slate hover:text-ink hover:border-strong transition-colors duration-150"
+            >
+              {lik === "obsidian" ? (
+                <Sun className="w-4 h-4" strokeWidth={2} />
+              ) : (
+                <Moon className="w-4 h-4" strokeWidth={2} />
+              )}
+            </button>
+
+            <a
+              href="#meet"
+              className="bg-ink text-canvas rounded-[4px] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] hover:brightness-[0.85] transition duration-150 whitespace-nowrap"
+            >
+              Записаться
+            </a>
+          </div>
         </div>
 
         <nav className="md:hidden border-t border-hairline" aria-label="Разделы">
           <div className="flex items-center justify-between h-11 px-4">
             {NAV_ITEMS.map((item) => (
-              <button
+              <a
                 key={item.anchor}
-                onClick={() => scrollToSection(item.anchor)}
-                className="text-[10px] font-medium uppercase tracking-[0.04em] text-slate hover:text-ink transition-colors duration-150 whitespace-nowrap"
+                href={`#${item.anchor}`}
+                aria-current={active === item.anchor ? "true" : undefined}
+                className={`text-[10px] font-medium uppercase tracking-[0.04em] transition-colors duration-150 whitespace-nowrap ${
+                  active === item.anchor ? "text-ink" : "text-slate hover:text-ink"
+                }`}
               >
                 {item.title}
-              </button>
+              </a>
             ))}
           </div>
         </nav>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-5 md:px-10">
+      <main>
         {/* ГЕРОЙ */}
-        <section className="pt-16 md:pt-28 pb-16 md:pb-24">
+        <section className="mx-auto max-w-[1400px] px-5 md:px-10 pt-16 md:pt-28 pb-16 md:pb-28">
           <Rise>
-            <Label>Мастер спорта · Плавание · Стайер</Label>
-            <h1 className="mt-5 text-[13vw] leading-[0.95] md:text-8xl lg:text-9xl font-semibold uppercase tracking-[-0.02em]">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="bg-ink text-canvas rounded-[2px] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                Мастер спорта России
+              </span>
+              <Label>Плавание · Стайер · Новосибирск</Label>
+            </div>
+            <h1 className="mt-6 text-[13vw] leading-[0.95] md:text-8xl lg:text-9xl font-semibold uppercase tracking-[-0.02em]">
               Бороздов
               <br />
               Никита
@@ -366,18 +534,18 @@ export default function App() {
               Вольный стиль, дистанции 400 / 800 / 1500 метров. Член сборной Новосибирской области.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => scrollToSection("meet")}
-                className="w-full sm:w-auto bg-ink text-canvas rounded-[4px] px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.02em] hover:brightness-85 transition duration-150"
+              <a
+                href="#meet"
+                className="w-full sm:w-auto text-center bg-ink text-canvas rounded-[4px] px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.02em] hover:brightness-[0.85] transition duration-150"
               >
                 Записаться на встречу
-              </button>
-              <button
-                onClick={() => scrollToSection("results")}
-                className="w-full sm:w-auto rounded-[4px] border border-hairline px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] hover:border-strong transition-colors duration-150"
+              </a>
+              <a
+                href="#results"
+                className="w-full sm:w-auto text-center rounded-[4px] border border-hairline px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] hover:border-strong transition-colors duration-150"
               >
                 Результаты
-              </button>
+              </a>
             </div>
           </Rise>
 
@@ -385,7 +553,7 @@ export default function App() {
             <div className="grid grid-cols-1 sm:grid-cols-3 border-t border-hairline">
               {[
                 { value: "762", unit: "очка FINA", note: "Лучший результат по очкам" },
-                { value: "3:53.15", unit: "400 м в/с, 25 м", note: "Лучшее время" },
+                { value: "СФО", unit: "титул", note: "Чемпион Сибирского федерального округа" },
                 { value: "МС", unit: "звание", note: "Мастер спорта России" },
               ].map((stat) => (
                 <div
@@ -405,9 +573,8 @@ export default function App() {
           </Rise>
         </section>
 
-        {/* СПОРТ */}
-        <section id="sport" className="scroll-mt-28 pb-16 md:pb-24">
-          <SectionHeader index="01" title="Спорт" />
+        {/* 01 СПОРТ */}
+        <Section id="sport" index="01" title="Спорт">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-hairline border border-hairline rounded-[8px] overflow-hidden">
             {[
               { label: "Звание", value: "Мастер спорта России" },
@@ -424,38 +591,38 @@ export default function App() {
               </Rise>
             ))}
           </div>
-        </section>
 
-        {/* РЕКОРДЫ */}
-        <section id="records" className="scroll-mt-28 pb-16 md:pb-24">
-          <SectionHeader index="02" title="Рекорды" />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+          <Rise className="mt-12 md:mt-16">
+            <Label>Титулы</Label>
+            <ul className="mt-4">
+              {["Чемпион Сибирского федерального округа по плаванию", "Чемпион Новосибирской области"].map(
+                (title) => (
+                  <li
+                    key={title}
+                    className="border-b border-hairline py-5 md:py-6 text-xl md:text-3xl font-semibold uppercase tracking-[-0.02em] leading-tight"
+                  >
+                    {title}
+                  </li>
+                )
+              )}
+            </ul>
+          </Rise>
+        </Section>
+
+        {/* 02 РЕЗУЛЬТАТЫ */}
+        <Section id="results" index="02" title="Результаты">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-6 md:gap-8 items-start">
             <Rise>
-              <Label>Титулы</Label>
-              <ul className="mt-6">
-                {["Чемпион Сибирского федерального округа по плаванию", "Чемпион Новосибирской области"].map(
-                  (title) => (
-                    <li
-                      key={title}
-                      className="border-b border-hairline py-5 text-xl md:text-3xl font-semibold uppercase tracking-[-0.02em] leading-tight"
-                    >
-                      {title}
-                    </li>
-                  )
-                )}
-              </ul>
-            </Rise>
-
-            <Rise delay={0.05}>
               <div className="bg-surface border border-hairline rounded-[8px] p-6 md:p-10">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
                   <Label>Лучший результат по очкам FINA</Label>
                   <RecordBadge>Личный рекорд</RecordBadge>
                 </div>
-                <div className="mt-8 font-mono tabular-nums text-[clamp(2.75rem,15vw,4.5rem)] md:text-8xl font-bold leading-none">
+                {/* Главная цифра — инверсия (§7) */}
+                <div className="mt-8 inline-block bg-ink text-canvas rounded-[4px] px-3 py-1.5 font-mono tabular-nums text-[clamp(2.25rem,11vw,4rem)] md:text-7xl font-bold leading-none">
                   4:00.79
                 </div>
-                <div className="mt-3 font-mono tabular-nums text-xl md:text-2xl text-soft">762 очка</div>
+                <div className="mt-4 font-mono tabular-nums text-xl md:text-2xl text-soft">762 очка</div>
                 <dl className="mt-10 pt-8 border-t border-hairline grid grid-cols-2 gap-6">
                   <div>
                     <dt><Label>Дистанция</Label></dt>
@@ -474,53 +641,51 @@ export default function App() {
                 </dl>
               </div>
             </Rise>
-          </div>
-        </section>
 
-        {/* РЕЗУЛЬТАТЫ */}
-        <section id="results" className="scroll-mt-28 pb-16 md:pb-24">
-          <SectionHeader index="03" title="Результаты" />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-            <Rise>
-              <ResultsTable caption="Бассейн 25 метров" rows={RESULTS_SCM} />
-            </Rise>
-            <Rise delay={0.05}>
-              <ResultsTable caption="Бассейн 50 метров" rows={RESULTS_LCM} />
-            </Rise>
+            <div className="grid grid-cols-1 gap-6 md:gap-8">
+              <Rise delay={0.05}>
+                <ResultsTable caption="Бассейн 50 метров" rows={RESULTS_LCM} />
+              </Rise>
+              <Rise delay={0.1}>
+                <ResultsTable caption="Бассейн 25 метров" rows={RESULTS_SCM} />
+              </Rise>
+            </div>
           </div>
 
           <Rise className="mt-12 md:mt-16">
             <Label>Профили в базах результатов</Label>
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {PROFILES.map((profile) => (
-                <a
-                  key={profile.name}
-                  href={profile.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-between gap-6 rounded-[8px] border border-hairline p-6 md:p-8 hover:bg-ink hover:text-canvas hover:border-strong transition-colors duration-150"
-                >
-                  <span>
-                    <span className="block text-2xl md:text-4xl font-semibold uppercase tracking-[-0.02em] leading-none">
-                      {profile.name}
-                    </span>
-                    <span className="mt-2 block text-sm text-slate group-hover:text-canvas/70 transition-colors duration-150">
-                      {profile.note}
-                    </span>
-                  </span>
-                  <ArrowUpRight
-                    className="w-6 h-6 md:w-8 md:h-8 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
-                    strokeWidth={2}
-                  />
-                </a>
+                <InvertCard key={profile.name} href={profile.url} title={profile.name} note={profile.note} />
               ))}
             </div>
           </Rise>
-        </section>
+        </Section>
 
-        {/* ОБУЧЕНИЕ */}
-        <section id="education" className="scroll-mt-28 pb-16 md:pb-24">
-          <SectionHeader index="04" title="Обучение" />
+        {/* 03 ПРОЕКТЫ */}
+        <Section id="projects" index="03" title="Проекты">
+          <Rise>
+            <p className="max-w-2xl text-lg md:text-2xl text-soft leading-snug mb-10 md:mb-14">
+              Инструменты для плавания, которые я делаю сам — открытые и бесплатные.
+            </p>
+          </Rise>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {PROJECTS.map((project, i) => (
+              <Rise key={project.name} delay={i * 0.05}>
+                <InvertCard
+                  href={project.url}
+                  title={project.name}
+                  note={project.note}
+                  meta={`${project.meta} · ${project.host}`}
+                  big
+                />
+              </Rise>
+            ))}
+          </div>
+        </Section>
+
+        {/* 04 ОБУЧЕНИЕ */}
+        <Section id="education" index="04" title="Обучение">
           <div>
             {EDUCATION.map((item, i) => (
               <Rise key={item.title} delay={i * 0.05}>
@@ -547,7 +712,7 @@ export default function App() {
           </div>
 
           <Rise className="mt-14 md:mt-20">
-            <Label>Проекты</Label>
+            <Label>Наставничество</Label>
             <a
               href="https://pokolenie.info/"
               target="_blank"
@@ -571,26 +736,48 @@ export default function App() {
               </p>
             </a>
           </Rise>
-        </section>
+        </Section>
 
-        {/* ВСТРЕЧА */}
-        <section id="meet" className="scroll-mt-28 pb-8">
-          <SectionHeader index="05" title="Встреча" />
+        {/* 05 ВСТРЕЧА */}
+        <Section id="meet" index="05" title="Встреча">
           <Rise>
-            <p className="max-w-2xl text-lg md:text-2xl text-soft leading-snug mb-10">
-              Выберите время — встреча или знакомство. Онлайн.
-            </p>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+              <p className="max-w-2xl text-lg md:text-2xl text-soft leading-snug">
+                Выберите время — встреча или знакомство. Онлайн.
+              </p>
+              <a
+                href={TELEGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 self-start md:self-auto rounded-[4px] border border-hairline px-5 py-3 text-[12px] font-medium uppercase tracking-[0.08em] hover:border-strong transition-colors duration-150 whitespace-nowrap"
+              >
+                <Send className="w-4 h-4" strokeWidth={2} />
+                Telegram · @BorozdovNikita
+              </a>
+            </div>
           </Rise>
           <CalInlineEmbed key={lik} lik={lik} />
-        </section>
+        </Section>
+      </main>
 
-        <footer className="mt-16 md:mt-24 py-10 border-t border-hairline flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <footer className="border-t border-hairline">
+        <div className="mx-auto max-w-[1400px] px-5 md:px-10 py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate">
             © <span className="font-mono tabular-nums">2026</span> Бороздов Никита · Мастер спорта · Новосибирск
           </div>
-          <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate">By Borozdov</div>
-        </footer>
-      </main>
+          <div className="flex items-center gap-6">
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate hover:text-ink transition-colors duration-150"
+            >
+              Telegram
+            </a>
+            <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate">By Borozdov</div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
