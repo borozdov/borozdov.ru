@@ -23,7 +23,19 @@
 
     <link rel="canonical" href="https://borozdov.ru/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#101010" />
     <title>Borozdov Nikita</title>
+
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var theme = stored === "light" || stored === "dark" ? stored : "dark";
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {}
+      })();
+    </script>
 
     <link rel="preconnect" href="https://mc.yandex.ru">
     <link rel="preconnect" href="https://mc.yandex.com">
