@@ -1,4 +1,4 @@
-const CACHE_NAME = 'athlete-profile-v1';
+const CACHE_NAME = 'athlete-profile-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
