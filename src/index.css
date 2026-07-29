@@ -69,11 +69,16 @@
 
   body {
     @apply bg-canvas text-ink font-sans antialiased;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
-  ::selection {
-    background: var(--ink);
-    color: var(--canvas);
+  /* Поля ввода остаются выделяемыми — иначе в них нельзя редактировать текст. */
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   :focus-visible {
