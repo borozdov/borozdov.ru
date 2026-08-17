@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
+      // Apex → www: раздача через CDN настроена на www.borozdov.ru (CNAME на apex
+      // невозможен из-за MX-записей почты), поэтому голый домен редиректим мгновенно.
+      if (location.hostname === 'borozdov.ru') {
+        location.replace('https://www.borozdov.ru' + location.pathname + location.search + location.hash);
+      }
+    </script>
+    <script>
       // Лик (брендбук §1.5): по умолчанию — среда, поверх — ручной выбор с памятью
       (function () {
         try {
