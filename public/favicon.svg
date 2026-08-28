@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" rx="16" fill="#fafafa" />
-  <text x="50" y="53" dominant-baseline="central" text-anchor="middle" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="700" font-size="62" fill="#0d0d0d">B</text>
+  <!-- Базовая линия задана явно: 50 + капитель/2 (Inter 0.7275em x 62 / 2 = 22.5).
+       dominant-baseline="central" здесь нельзя: он считается от asc/desc шрифта,
+       а фавикон веб-шрифты не грузит — литера уезжала на 3-5% в каждом фолбэке. -->
+  <text x="50" y="72.5" text-anchor="middle" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="700" font-size="62" fill="#0d0d0d">B</text>
 </svg>
