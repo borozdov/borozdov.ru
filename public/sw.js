@@ -1,4 +1,6 @@
-const CACHE_NAME = 'athlete-profile-v4';
+self.addEventListener('install', () => self.skipWaiting());
+
+const CACHE_NAME = 'borozdov-maintenance-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -8,6 +10,7 @@ const STATIC_ASSETS = [
 // Cache the versioned assets (JS/CSS) as they are requested
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (request.method !== 'GET' || request.mode === 'navigate') return;
   const url = new URL(request.url);
 
   // Only cache assets from our own origin
